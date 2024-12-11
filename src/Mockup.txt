@@ -1,0 +1,235 @@
+App.js
+// src/App.js
+import React, { useState } from "react";
+import LoginPage from "./LoginPage";
+import ApplicationDirectory from "./ApplicationDirectory";
+import Notification from "./Notification";
+
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    setShowNotification(true); // แสดง Notification เมื่อเข้าสู่ระบบสำเร็จ
+  };
+
+  const handleCloseNotification = () => {
+    setShowNotification(false); // ซ่อน Notification
+  };
+
+  return (
+    <div className="App">
+      {isLoggedIn ? (
+        <ApplicationDirectory />
+      ) : (
+        <LoginPage onLogin={handleLogin} />
+      )}
+
+      {/* แสดง Notification เมื่อ showNotification เป็น true */}
+      {showNotification && (
+        <Notification message="Login successful!" onClose={handleCloseNotification} />
+      )}
+    </div>
+  );
+}
+
+export default App;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+LoginPage.js
+// src/LoginPage.js
+import React, { useState } from "react";
+import logo from "./logo/logo.png"; // นำเข้ารูปภาพโลโก้
+
+function LoginPage({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleLogin = (event) => {
+    event.preventDefault();
+    
+    // Mockup การล็อกอินสำเร็จโดยไม่เชื่อมต่อกับ Keycloak
+    if (username === "testuser" && password === "password123") {
+      onLogin(); // เรียกใช้ฟังก์ชัน onLogin เพื่อเปลี่ยนสถานะการล็อกอินใน App.js
+      setErrorMessage(""); // เคลียร์ข้อความ error
+    } else {
+      setErrorMessage("Invalid username or password"); // แสดง error หากล็อกอินไม่สำเร็จ
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="w-full max-w-md px-8 py-6 bg-white rounded-lg shadow-lg">
+        {/* Logo Section */}
+        <div className="flex justify-center mb-6">
+          <img src={logo} alt="Collabx Logo" className="h-12" />
+        </div>
+
+        {/* Login Form Section */}
+        <h2 className="text-lg font-semibold text-center mb-4">What's your username?</h2>
+        
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Enter your username"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-black"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Enter password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-black"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-2 mb-6 text-white bg-black rounded-md hover:bg-gray-900"
+          >
+            Continue
+          </button>
+
+          {errorMessage && <p className="text-red-500 text-center mb-4">{errorMessage}</p>}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default LoginPage;
+------------------------------------------------------------------------------------------------------------------------------------------------
+login V2
+// src/LoginPage.js
+import React, { useState } from "react";
+import axios from "axios";
+import keycloak from "./keycloak"; // Import Keycloak configuration
+import logo from "./logo/logo.png"; // นำเข้ารูปภาพโลโก้
+
+function LoginPage({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // State สำหรับควบคุมการแสดงรหัสผ่าน
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await axios.post(
+        `${keycloak.authServerUrl}/realms/${keycloak.realm}/protocol/openid-connect/token`,
+        new URLSearchParams({
+          client_id: keycloak.clientId,
+          grant_type: "password",
+          username: username,
+          password: password,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      localStorage.setItem("keycloakToken", response.data.access_token); // เก็บ token ใน localStorage
+      setErrorMessage("");
+      onLogin(); // เรียก onLogin เพื่อเปลี่ยนสถานะการล็อกอิน
+    } catch (error) {
+      setErrorMessage("Invalid username or password"); // แสดง error หากล็อกอินไม่สำเร็จ
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center h-screen bg-gray-50" > {/* เปลี่ยนสีพื้นหลังเป็นเทา */}
+      <div className="w-full max-w-md px-8 py-6 bg-white rounded-lg shadow-lg">
+        {/* Logo Section */}
+        <div className="flex justify-center mb-6">
+          <img src="https://cdn-icons-png.freepik.com/256/17895/17895692.png?ga=GA1.1.714577037.1727171661&semt=ais_hybrid" alt="Collabx Logo" className="h-16" />
+        </div>
+
+        {/* Login Form Section */}
+        <h2 className="text-lg font-semibold text-center mb-4">What's your username?</h2>
+        
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Enter your username"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-black"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4 relative">
+            <input
+              type={showPassword ? "text" : "password"} // เปลี่ยน type เป็น "text" หรือ "password"
+              placeholder="Enter password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-black"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {/* Icon toggle show/hide password */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)} // เปลี่ยนค่าของ showPassword
+              className="absolute inset-y-0 right-3 flex items-center"
+            >
+              {showPassword ? (
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/159/159604.png" // ดวงตาที่ขีดทับ (ซ่อนรหัสผ่าน)
+                  alt="Hide Password"
+                  className="h-5 w-5"
+                />
+              ) : (
+                <img
+                  src="https://cdn-icons-png.flaticon.com/128/8276/8276554.png" // ดวงตาธรรมดา (แสดงรหัสผ่าน)
+                  alt="Show Password"
+                  className="h-5 w-5"
+                />
+              )}
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-2 mb-6 text-white bg-black rounded-md hover:bg-gray-900"
+          >
+            Continue
+          </button>
+
+          {errorMessage && <p className="text-red-500 text-center mb-4">{errorMessage}</p>}
+        </form>
+
+        <div className="flex items-center justify-center my-4">
+          <span className="text-gray-500">or</span>
+        </div>
+
+        <button
+          className="w-full flex items-center justify-center py-2 mb-3 border border-gray-300 rounded-md text-gray-700"
+        >
+          <img src="https://cdn-icons-png.freepik.com/256/3697/3697141.png?ga=GA1.1.714577037.1727171661&semt=ais_hybrid" alt="QR Code Icon" className="h-5 mr-2" />
+          Log in with QR code
+        </button>
+
+        {/* Consent Text */}
+        <p className="mt-6 text-xs text-gray-500 text-center">
+          Proudly powered by Collabx
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default LoginPage;
