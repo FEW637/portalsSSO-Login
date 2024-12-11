@@ -2,7 +2,7 @@ const keycloakConfig = {
   authServerUrl: "https://dev-sso.techberry.co.th",
   realm: "master",
   clientId: "admin-cli",
-  redirectUri: window.location.origin + "/dashboard",
+  redirectUri: "https://dev-sso.techberry.co.th/dashboard",  // Update this to your production URL
   responseType: "code",
 };
 

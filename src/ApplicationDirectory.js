@@ -1,15 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import HyperDesignerLogo from "./logo/hyper.png";
 import DMADesignerLogo from "./logo/logo.png";
-import keycloakConfig from "./keycloak";
-
 const applications = [
   {
     id: 1,
     name: "Hyper Designer",
     description:
       "Hyper Suite is a powerful integration tool that seamlessly connects and streamlines your software applications.",
-    logo: HyperDesignerLogo,
+    logo: HyperDesignerLogo, // Update with actual logo URL
     tags: ["API Integration", "Communication"],
     link: "https://hyper-designer-uat-02.techberry.co.th/hypersuite/auth/login",
     type: "Integration",
@@ -19,86 +18,49 @@ const applications = [
     name: "DMA Designer",
     description:
       "Build your own application with low coding by DMA that would help you be strongly competitive.",
-    logo: DMADesignerLogo,
+    logo: DMADesignerLogo, // Update with actual logo URL
     tags: ["Workspace Tools", "Productivity"],
     link: "https://dmadesignercloudsit.beebuddy.net/dmaDesigner/",
     type: "Tool",
   },
 ];
 
-function ApplicationDirectory({ accessToken }) {
+const ApplicationDirectory = () => {
+  const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState("all");
+  const [accessToken, setAccessToken] = useState(null);
+
+  useEffect(() => {
+    // Check for access token
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    setAccessToken(token);
+  }, [navigate]);
 
   const handleLogout = () => {
-    // Clear cookies and storage
-    document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    
-    const logoutUrl = `${keycloakConfig.authServerUrl}/realms/${keycloakConfig.realm}/protocol/openid-connect/logout?redirect_uri=${encodeURIComponent(
-      "http://localhost:3000"
-    )}`;
-    window.location.href = logoutUrl;
+    localStorage.removeItem('access_token');
+    navigate('/');
   };
 
-  // Method 1: Using URL Parameters
   const handleAccessApp = (app) => {
     try {
-      console.log('Accessing app:', app.name);
-      console.log('Token available:', accessToken);
-
-      // Create URL with token
-      const url = new URL(app.link);
-      url.searchParams.append('token', accessToken);
-      
-      // Open in new tab
-      window.open(url.toString(), '_blank');
-
-      console.log('Redirecting to:', url.toString());
+      const redirectUrl = `/redirect?target=${encodeURIComponent(app.link)}`;
+      window.location.href = redirectUrl;
     } catch (error) {
       console.error('Error accessing application:', error);
-      // Fallback to direct URL if URL construction fails
-      window.open(app.link, '_blank');
     }
   };
-
-  /* Method 2: Using POST Form (uncomment if needed)
-  const handleAccessApp = async (app) => {
-    try {
-      console.log('Accessing app:', app.name);
-      console.log('Token available:', accessToken);
-
-      // Create a form element
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = app.link;
-      form.target = '_blank';
-      
-      // Add token as hidden input
-      const tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'token';
-      tokenInput.value = accessToken;
-      form.appendChild(tokenInput);
-
-      // Add the form to the document and submit it
-      document.body.appendChild(form);
-      form.submit();
-      
-      // Clean up by removing the form
-      document.body.removeChild(form);
-
-      console.log('Redirecting to:', app.link);
-    } catch (error) {
-      console.error('Error accessing application:', error);
-      window.open(app.link, '_blank');
-    }
-  };
-  */
 
   const filteredApplications = applications.filter((app) =>
     selectedType === "all" ? true : app.type === selectedType
   );
+
+  if (!accessToken) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6 sm:p-10 bg-purple-50/50 min-h-screen">
@@ -209,6 +171,6 @@ function ApplicationDirectory({ accessToken }) {
       </div>
     </div>
   );
-}
+};
 
 export default ApplicationDirectory;

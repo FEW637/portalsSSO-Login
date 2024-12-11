@@ -24,31 +24,31 @@ const LoginPage = () => {
 
       console.log('Request body:', formData.toString());
 
-     // Using proxy URL
-     const response = await fetch(
-      '/realms/master/protocol/openid-connect/token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData
-      }
-    );
+      // Using proxy URL
+      const response = await fetch(
+        '/realms/master/protocol/openid-connect/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData
+        }
+      );
 
-      console.log('Response:', response.data);
+      const data = await response.json();
+      console.log('Response:', data);
 
-      if (response.data.access_token) {
+      if (data.access_token) {
         console.log('Login successful');
-        localStorage.setItem('access_token', response.data.access_token);
+        localStorage.setItem('access_token', data.access_token);
         navigate('/dashboard');
       } else {
         throw new Error('No access token received');
       }
     } catch (error) {
-      console.error('Login error:', error.response?.data || error);
+      console.error('Login error:', error);
       setErrorMessage(
-        error.response?.data?.error_description || 
         error.message || 
         'Login failed. Please try again.'
       );
