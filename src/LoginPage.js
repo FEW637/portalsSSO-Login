@@ -24,15 +24,17 @@ const LoginPage = () => {
 
       console.log('Request body:', formData.toString());
 
-      const response = await axios({
-        method: 'post',
-        url: 'https://dev-sso.techberry.co.th/realms/master/protocol/openid-connect/token',
-        data: formData,
+     // Using proxy URL
+     const response = await fetch(
+      '/realms/master/protocol/openid-connect/token',
+      {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-        }
-      });
+        },
+        body: formData
+      }
+    );
 
       console.log('Response:', response.data);
 
